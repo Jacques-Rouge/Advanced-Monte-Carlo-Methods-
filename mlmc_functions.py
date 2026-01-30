@@ -310,14 +310,23 @@ def run_mlmc(mu_func, sigma_func, T, K, M_param, epsilon, max_levels, N_initial,
         # Step 5: Test convergence (L ≥ 2)
         if L >= 2:
             mean_L = means_sum[L] / N_current[L]
-            threshold = 0.5 * epsilon / np.sqrt(2)
+            mean_L_minus_1 = means_sum[L-1] / N_current[L-1]
+            
+            # Calculate the threshold based on the image's formula: 1/sqrt(2) * (M-1) * epsilon
+            # Given M = 4, this equals (3 * epsilon) / sqrt(2)
+            rhs_threshold = ( (4 - 1) * epsilon ) / np.sqrt(2) 
+            
+            # Equation (10): max of scaled previous level and current level
+            error_estimate = max(abs(mean_L_minus_1) / 4, abs(mean_L))
+
+            mean_L = means_sum[L] / N_current[L]
             
             if verbose:
-                print(f"\nStep 5: Convergence test")
-                print(f"  |E[P_{L} - P_{L-1}]| = {abs(mean_L):.6e}")
-                print(f"  Threshold = {threshold:.6e}")
+                print(f"\nStep 5: Convergence test (Equation 10)")
+                print(f"  Max(|Y_{L-1}|/M, |Y_{L}|) = {error_estimate:.6e}")
+                print(f"  Threshold = {rhs_threshold:.6e}")
             
-            if abs(mean_L) < threshold:
+            if error_estimate < rhs_threshold:
                 converged = True
                 if verbose:
                     print(f"  ✓ CONVERGED")
